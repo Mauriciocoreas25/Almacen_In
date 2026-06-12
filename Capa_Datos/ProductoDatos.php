@@ -4,21 +4,26 @@
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'Conexion.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Capa_Entidades' . DIRECTORY_SEPARATOR . 'Producto.php';
 
+/**
+ * ProductoDatos — Adaptado al schema real de la BD.
+ * La tabla 'producto' usa 'precio_venta' (no 'precio').
+ * El campo 'estado' es BIT(1).
+ */
 class ProductoDatos {
     private $conexion;
 
-    // Constructor: Inicializa el objeto de conexión
     public function __construct() {
         $this->conexion = new Conexion();
     }
 
-    // Método para insertar un nuevo producto 
+    // Insertar nuevo producto
     public function insertar(Producto $producto) {
-        $sql = "INSERT INTO producto (codigo, nombre, id_categoria, precio, stock, estado) VALUES (?, ?, ?, ?, ?, ?)";
+        $sql = "INSERT INTO producto (id_categoria, codigo, nombre, precio_venta, stock, estado)
+                VALUES (?, ?, ?, ?, ?, ?)";
         $params = [
+            $producto->getIdCategoria(),
             $producto->getCodigo(),
             $producto->getNombre(),
-            $producto->getIdCategoria(),
             $producto->getPrecio(),
             $producto->getStock(),
             $producto->getEstado() ? 1 : 0
@@ -26,13 +31,14 @@ class ProductoDatos {
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para modificar un producto existente 
+    // Modificar producto existente
     public function modificar(Producto $producto) {
-        $sql = "UPDATE producto SET codigo = ?, nombre = ?, id_categoria = ?, precio = ?, stock = ?, estado = ? WHERE id_producto = ?";
+        $sql = "UPDATE producto SET id_categoria = ?, codigo = ?, nombre = ?, precio_venta = ?, stock = ?, estado = ?
+                WHERE id_producto = ?";
         $params = [
+            $producto->getIdCategoria(),
             $producto->getCodigo(),
             $producto->getNombre(),
-            $producto->getIdCategoria(),
             $producto->getPrecio(),
             $producto->getStock(),
             $producto->getEstado() ? 1 : 0,
@@ -41,45 +47,52 @@ class ProductoDatos {
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para eliminar un producto 
+    // Eliminar producto
     public function eliminar($id_producto) {
-        $sql = "DELETE FROM producto WHERE id_producto = ?";
+        $sql    = "DELETE FROM producto WHERE id_producto = ?";
         $params = [$id_producto];
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para listar todos los productos del inventario
+    // Verificar si el producto tiene ventas asociadas
+    public function tieneVentasAsociadas($id_producto) {
+        $sql  = "SELECT COUNT(*) as total FROM detalle_venta WHERE id_producto = ?";
+        $fila = $this->conexion->get_record($sql, [$id_producto]);
+        return $fila && (int)$fila['total'] > 0;
+    }
+
+    // Listar todo el inventario
     public function listarTodo() {
-        $sql = "SELECT id_producto, codigo, nombre, id_categoria, precio, stock, estado FROM producto";
+        $sql  = "SELECT id_producto, id_categoria, codigo, nombre, precio_venta, stock, estado FROM producto ORDER BY id_producto DESC";
         $filas = $this->conexion->get_records($sql);
-        
-        $listaProductos = [];
+
+        $lista = [];
         foreach ($filas as $fila) {
-            $listaProductos[] = new Producto(
+            $lista[] = new Producto(
                 $fila['id_producto'],
                 $fila['codigo'],
                 $fila['nombre'],
                 $fila['id_categoria'],
-                (double)$fila['precio'],
+                (double)$fila['precio_venta'],
                 (int)$fila['stock'],
                 (bool)$fila['estado']
             );
         }
-        return $listaProductos;
+        return $lista;
     }
 
-    // Método para buscar un producto específico por su ID
+    // Buscar producto por ID
     public function buscarPorId($id_producto) {
-        $sql = "SELECT id_producto, codigo, nombre, id_categoria, precio, stock, estado FROM producto WHERE id_producto = ?";
+        $sql  = "SELECT id_producto, id_categoria, codigo, nombre, precio_venta, stock, estado FROM producto WHERE id_producto = ?";
         $fila = $this->conexion->get_record($sql, [$id_producto]);
-        
+
         if ($fila) {
             return new Producto(
                 $fila['id_producto'],
                 $fila['codigo'],
                 $fila['nombre'],
                 $fila['id_categoria'],
-                (double)$fila['precio'],
+                (double)$fila['precio_venta'],
                 (int)$fila['stock'],
                 (bool)$fila['estado']
             );
@@ -87,57 +100,56 @@ class ProductoDatos {
         return null;
     }
 
-    // Método para buscar productos mediante filtros de texto 
+    // Buscar productos por código o nombre
     public function buscarPorFiltro($busqueda) {
-        $sql = "SELECT id_producto, codigo, nombre, id_categoria, precio, stock, estado 
-                FROM producto 
-                WHERE nombre LIKE ? OR codigo LIKE ?";
+        $sql     = "SELECT id_producto, id_categoria, codigo, nombre, precio_venta, stock, estado
+                    FROM producto
+                    WHERE nombre LIKE ? OR codigo LIKE ?";
         $termino = "%" . $busqueda . "%";
-        $filas = $this->conexion->get_records($sql, [$termino, $termino]);
-        
-        $listaProductos = [];
+        $filas   = $this->conexion->get_records($sql, [$termino, $termino]);
+
+        $lista = [];
         foreach ($filas as $fila) {
-            $listaProductos[] = new Producto(
+            $lista[] = new Producto(
                 $fila['id_producto'],
                 $fila['codigo'],
                 $fila['nombre'],
                 $fila['id_categoria'],
-                (double)$fila['precio'],
+                (double)$fila['precio_venta'],
                 (int)$fila['stock'],
                 (bool)$fila['estado']
             );
         }
-        return $listaProductos;
+        return $lista;
     }
 
-    // Método operativo para actualizar stock en compras/ventas 
+    // Actualizar stock (suma positiva o negativa)
     public function actualizarStock($id_producto, $cantidad) {
-        $sql = "UPDATE producto SET stock = stock + (?) WHERE id_producto = ?";
+        $sql    = "UPDATE producto SET stock = stock + (?) WHERE id_producto = ?";
         $params = [(int)$cantidad, $id_producto];
         return $this->conexion->execute_query($sql, $params);
     }
 
-  
-
-    // Reporte administrativo: Productos con bajo stock 
+    // Reporte: productos con bajo stock
     public function listarBajoStock($limiteMinimo = 5) {
-        $sql = "SELECT id_producto, codigo, nombre, id_categoria, precio, stock, estado 
-                FROM producto 
-                WHERE stock <= ? AND estado = 1";
+        $sql  = "SELECT id_producto, id_categoria, codigo, nombre, precio_venta, stock, estado
+                 FROM producto
+                 WHERE stock <= ? AND estado = 1
+                 ORDER BY stock ASC";
         $filas = $this->conexion->get_records($sql, [(int)$limiteMinimo]);
-        
-        $listaProductos = [];
+
+        $lista = [];
         foreach ($filas as $fila) {
-            $listaProductos[] = new Producto(
+            $lista[] = new Producto(
                 $fila['id_producto'],
                 $fila['codigo'],
                 $fila['nombre'],
                 $fila['id_categoria'],
-                (double)$fila['precio'],
+                (double)$fila['precio_venta'],
                 (int)$fila['stock'],
                 (bool)$fila['estado']
             );
         }
-        return $listaProductos;
+        return $lista;
     }
 }

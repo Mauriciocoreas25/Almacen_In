@@ -42,6 +42,9 @@ class ProductoNegocio {
         if (empty($id_producto)) {
             return false;
         }
+        if ($this->productoDatos->tieneVentasAsociadas($id_producto)) {
+            return "No se puede eliminar el producto porque está asociado a una o más ventas. Puede desactivarlo en su lugar para ocultarlo de futuras transacciones.";
+        }
         return $this->productoDatos->eliminar($id_producto);
     }
 
@@ -63,7 +66,7 @@ class ProductoNegocio {
         if (empty($busqueda)) {
             return $this->productoDatos->listarTodo();
         }
-        return $this->productoDatos->buscarPo iltro($busqueda);
+        return $this->productoDatos->buscarPorFiltro($busqueda);
     }
 
 

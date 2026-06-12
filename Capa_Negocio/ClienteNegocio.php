@@ -35,6 +35,13 @@ class ClienteNegocio {
         if (empty($id_cliente)) {
             return false;
         }
+        // No se puede eliminar el cliente con ID 1 porque es el Consumidor Final predeterminado
+        if ($id_cliente === 1) {
+            return "No se puede eliminar el cliente 'Consumidor Final' ya que es requerido por el sistema.";
+        }
+        if ($this->clienteDatos->tieneVentasAsociadas($id_cliente)) {
+            return "No se puede eliminar el cliente porque está asociado a una o más ventas registradas.";
+        }
         return $this->clienteDatos->eliminar($id_cliente);
     }
 

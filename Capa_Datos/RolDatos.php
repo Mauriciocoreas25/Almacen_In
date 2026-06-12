@@ -4,59 +4,61 @@
 require_once __DIR__ . DIRECTORY_SEPARATOR . 'Conexion.php';
 require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Capa_Entidades' . DIRECTORY_SEPARATOR . 'Rol.php';
 
+/**
+ * RolDatos — Adaptado al schema real de la BD.
+ *
+ * Schema real tabla 'rol':
+ *   id_rol, nombre (varchar 30), descripcion, estado (bit)
+ *
+ * La entidad Rol.php usa getNombreRol() → mapeado a columna 'nombre'
+ */
 class RolDatos {
     private $conexion;
 
-    // Constructor: Inicializa el objeto de conexión
     public function __construct() {
         $this->conexion = new Conexion();
     }
 
-    // Método para insertar un nuevo rol en la base de datos
+    // Insertar nuevo rol
     public function insertar(Rol $rol) {
-        $sql = "INSERT INTO rol (nombre_rol) VALUES (?)";
-        // Pasamos los parámetros extrayéndolos de la entidad mediante su getter
+        $sql    = "INSERT INTO rol (nombre) VALUES (?)";
         $params = [$rol->getNombreRol()];
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para modificar un rol existente
+    // Modificar rol existente
     public function modificar(Rol $rol) {
-        $sql = "UPDATE rol SET nombre_rol = ? WHERE id_rol = ?";
-        $params = [
-            $rol->getNombreRol(),
-            $rol->getIdRol()
-        ];
+        $sql    = "UPDATE rol SET nombre = ? WHERE id_rol = ?";
+        $params = [$rol->getNombreRol(), $rol->getIdRol()];
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para eliminar un rol por su ID
+    // Eliminar rol por ID
     public function eliminar($id_rol) {
-        $sql = "DELETE FROM rol WHERE id_rol = ?";
+        $sql    = "DELETE FROM rol WHERE id_rol = ?";
         $params = [$id_rol];
         return $this->conexion->execute_query($sql, $params);
     }
 
-    // Método para listar todos los roles (Devuelve un array de objetos Rol)
-    public function listar todos() {
-        $sql = "SELECT id_rol, nombre_rol FROM rol";
+    // Listar todos los roles
+    public function listarTodo() {
+        $sql  = "SELECT id_rol, nombre FROM rol ORDER BY id_rol ASC";
         $filas = $this->conexion->get_records($sql);
-        
-        $listaRoles = [];
-        // Mapeamos los resultados de la base de datos a objetos de nuestra entidad
+
+        $lista = [];
         foreach ($filas as $fila) {
-            $listaRoles[] = new Rol($fila['id_rol'], $fila['nombre_rol']);
+            $lista[] = new Rol($fila['id_rol'], $fila['nombre']);
         }
-        return $listaRoles;
+        return $lista;
     }
 
-    // Método para buscar un rol específico por su ID
+    // Buscar rol por ID
     public function buscarPorId($id_rol) {
-        $sql = "SELECT id_rol, nombre_rol FROM rol WHERE id_rol = ?";
+        $sql  = "SELECT id_rol, nombre FROM rol WHERE id_rol = ?";
         $fila = $this->conexion->get_record($sql, [$id_rol]);
-        
+
         if ($fila) {
-            return new Rol($fila['id_rol'], $fila['nombre_rol']);
+            return new Rol($fila['id_rol'], $fila['nombre']);
         }
         return null;
     }

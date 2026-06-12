@@ -7,14 +7,20 @@ class Cliente {
     private $telefono;
     private $correo;
     private $direccion;
+    private $dui;
+    private $nit;
+    private $personalidad_juridica;
 
     // Constructor para inicializar la entidad cliente 
-    public function __construct($id_cliente = null, $nombre_completo = "", $telefono = "", $correo = "", $direccion = "") {
+    public function __construct($id_cliente = null, $nombre_completo = "", $telefono = "", $correo = "", $direccion = "", $dui = null, $nit = null, $personalidad_juridica = 0) {
         $this->id_cliente = $id_cliente;
         $this->nombre_completo = $nombre_completo;
         $this->telefono = $telefono;
         $this->correo = $correo;
         $this->direccion = $direccion;
+        $this->dui = $dui;
+        $this->nit = $nit;
+        $this->personalidad_juridica = $personalidad_juridica;
     }
 
     // --- MÉTODOS GETTER Y SETTER  PARA OBTENER LOS VALORES ---
@@ -62,5 +68,32 @@ class Cliente {
 
     public function setDireccion($direccion) {
         $this->direccion = $direccion;
+    }
+
+    // dui
+    public function getDui() {
+        return $this->dui;
+    }
+
+    public function setDui($dui) {
+        $this->dui = $dui;
+    }
+
+    // nit
+    public function getNit() {
+        return $this->nit;
+    }
+
+    public function setNit($nit) {
+        $this->nit = $nit;
+    }
+
+    // personalidad_juridica
+    public function getPersonalidadJuridica() {
+        return $this->personalidad_juridica;
+    }
+
+    public function setPersonalidadJuridica($personalidad_juridica) {
+        $this->personalidad_juridica = $personalidad_juridica;
     }
 }

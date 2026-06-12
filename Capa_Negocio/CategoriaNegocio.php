@@ -35,6 +35,9 @@ class CategoriaNegocio {
         if (empty($id_categoria)) {
             return false;
         }
+        if ($this->categoriaDatos->tieneProductosAsociados($id_categoria)) {
+            return "No se puede eliminar la categoría porque tiene productos asociados. Debe eliminar o reasignar esos productos primero.";
+        }
         return $this->categoriaDatos->eliminar($id_categoria);
     }
 

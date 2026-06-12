@@ -18,11 +18,11 @@ class Conexion {
     public $pdo;
     private $error;
 
-    // Constructor: Inicializa los atributos con los datos guardados en $_ENV
+    // Constructor: Inicializa los atributos con los datos guardados en $_ENV, con fallbacks seguros
     public function __construct() {
         $this->server   = $_ENV['DB_SERVER']   ?? 'localhost';
-        $this->db_name  = $_ENV['DB_NAME']     ?? '';
-        $this->user     = $_ENV['DB_USER']     ?? '';
+        $this->db_name  = $_ENV['DB_NAME']     ?? 'almacen_inventario';
+        $this->user     = $_ENV['DB_USER']     ?? 'root';
         $this->password = $_ENV['DB_PASS']     ?? '';
         $this->charset  = $_ENV['DB_CHARSET']  ?? 'utf8mb4';
     }
@@ -36,7 +36,7 @@ class Conexion {
         $options = [
             PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Activa el manejo de excepciones (errores)
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // Devuelve los datos como arreglos asociativos
-            PDO::ATTR_EMULATE_PREPARES   => false,                  // Desactiva la emulación para evitar inyecciones SQL
+            PDO::ATTR_EMULATE_PREPARES   => false,                  // Desactiva la emulación para mayor seguridad
         ];
 
         try {
@@ -62,6 +62,21 @@ class Conexion {
             $result = $stmt->execute($params);
             $this->cerrar_conexion();
             return $result; // Retorna true si fue exitosa, false si no
+        } catch (PDOException $e) {
+            $this->cerrar_conexion();
+            die("Error al ejecutar la consulta: " . $e->getMessage());
+        }
+    }
+
+    // Método para INSERT que retorna el ID generado automáticamente
+    public function execute_insert($sql, $params = []) {
+        try {
+            $this->conectar();
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute($params);
+            $lastId = $this->pdo->lastInsertId(); // Se obtiene ANTES de cerrar
+            $this->cerrar_conexion();
+            return $lastId ? (int)$lastId : false;
         } catch (PDOException $e) {
             $this->cerrar_conexion();
             die("Error al ejecutar la consulta: " . $e->getMessage());

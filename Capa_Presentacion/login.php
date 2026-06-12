@@ -1,7 +1,14 @@
 <?php
-// Iniciar sesión para verificar si vienen alertas o mensajes de error
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
+if (session_status() == PHP_SESSION_NONE) { session_start(); }
+// Si ya está logueado, ir al dashboard directamente
+if (isset($_SESSION['id_usuario'])) {
+    header('Location: /Almacen_In/Capa_Presentacion/dashboard.php');
+    exit();
+}
+$error = '';
+if (isset($_SESSION['error_login'])) {
+    $error = $_SESSION['error_login'];
+    unset($_SESSION['error_login']);
 }
 ?>
 <!DOCTYPE html>
@@ -9,67 +16,106 @@ if (session_status() == PHP_SESSION_NONE) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - Sistema Inventario</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f4f6f9;
-            height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .login-card {
-            border: none;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 400px;
-        }
-        .btn-primary {
-            background-color: #0d6efd;
-            border: none;
-        }
-        .btn-primary:hover {
-            background-color: #0b5ed7;
-        }
-    </style>
+    <meta name="description" content="Iniciar sesión en el Sistema de Control de Inventario & Ventas">
+    <title>Iniciar Sesión — Sistema de Control de Inventario & Ventas</title>
+    <link rel="stylesheet" href="/Almacen_In/Capa_Presentacion/assets/css/login.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏪</text></svg>">
 </head>
 <body>
 
-<div class="card login-card p-4 bg-white">
-    <div class="card-body">
-        <h3 class="card-title text-center mb-4 fw-bold text-dark">NEXUS POS</h3>
-        <p class="text-muted text-center mb-4">Control de Inventario y Ventas</p>
+<!-- Animated background -->
+<div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+</div>
 
-        <?php if (isset($_SESSION['error_login'])): ?>
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <?php 
-                    echo $_SESSION['error_login']; 
-                    unset($_SESSION['error_login']); // Limpiar el error para que no se quede fijo
-                ?>
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+<div class="login-wrapper">
+    <div class="login-card">
+
+        <!-- Logo & Brand -->
+        <div class="login-logo">
+            <h1 class="login-title" style="font-size: 20px; line-height: 1.3;">Sistema de Control de Inventario &amp; Ventas</h1>
+            <p class="login-subtitle">Acceso al Sistema</p>
+        </div>
+
+        <!-- Error message -->
+        <?php if (!empty($error)): ?>
+        <div class="login-error" id="errorAlert">
+            <?php echo htmlspecialchars($error); ?>
+        </div>
         <?php endif; ?>
 
-        <form action="controladores/LoginController.php" method="POST">
-            <div class="mb-3">
-                <label for="usuario" class="form-label text-secondary">Usuario o Cuenta</label>
-                <input type="text" name="usuario" id="usuario" class="form-control" placeholder="Ej: admin" required autocomplete="username">
-            </div>
-            
-            <div class="mb-4">
-                <label for="password" class="form-label text-secondary">Contraseña</label>
-                <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        <!-- Login Form -->
+        <form action="/Almacen_In/Capa_Presentacion/Controladores/LoginController.php" method="POST" id="loginForm">
+
+            <div class="login-input-group">
+                <label for="usuario">Usuario o Cuenta</label>
+                <div class="input-wrap">
+                    <input type="text"
+                           id="usuario"
+                           name="usuario"
+                           placeholder="Ej: admin"
+                           required
+                           autocomplete="username"
+                           autofocus>
+                </div>
             </div>
 
-            <div class="d-grid">
-                <button type="submit" class="btn btn-primary py-2 fw-semibold">Ingresar al Sistema</button>
+            <div class="login-input-group">
+                <label for="password">Contraseña</label>
+                <div class="input-wrap">
+                    <input type="password"
+                           id="password"
+                           name="password"
+                           placeholder="••••••••"
+                           required
+                           autocomplete="current-password">
+                    <button type="button" class="toggle-pass" id="togglePass" title="Mostrar / Ocultar">
+                        [Ver]
+                    </button>
+                </div>
             </div>
+
+            <button type="submit" class="btn-login" id="submitBtn">
+                Ingresar al Sistema
+            </button>
         </form>
+
+        <div class="login-footer">
+            Conexión segura • Sistema de Control de Inventario &amp; Ventas &copy; <?php echo date('Y'); ?>
+        </div>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Toggle password visibility
+const toggleBtn  = document.getElementById('togglePass');
+const passInput  = document.getElementById('password');
+
+toggleBtn.addEventListener('click', () => {
+    const isPass = passInput.type === 'password';
+    passInput.type  = isPass ? 'text' : 'password';
+    toggleBtn.textContent = isPass ? '[Ocultar]' : '[Ver]';
+});
+
+// Loading state on submit
+document.getElementById('loginForm').addEventListener('submit', function() {
+    const btn = document.getElementById('submitBtn');
+    btn.innerHTML = 'Verificando...';
+    btn.disabled = true;
+});
+
+// Auto-dismiss error after 5s
+const err = document.getElementById('errorAlert');
+if (err) {
+    setTimeout(() => {
+        err.style.transition = 'opacity 0.5s';
+        err.style.opacity = '0';
+        setTimeout(() => err.remove(), 500);
+    }, 5000);
+}
+</script>
 </body>
 </html>

@@ -6,6 +6,13 @@ if (session_status() == PHP_SESSION_NONE) {
 
 require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Capa_Negocio' . DIRECTORY_SEPARATOR . 'UsuarioNegocio.php';
 
+// Logout
+if (isset($_GET['accion']) && $_GET['accion'] === 'logout') {
+    session_destroy();
+    header('Location: /Almacen_In/Capa_Presentacion/login.php');
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     $username = isset($_POST['usuario']) ? trim($_POST['usuario']) : '';

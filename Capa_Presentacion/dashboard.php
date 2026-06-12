@@ -1,152 +1,251 @@
 <?php
-if (session_status() == PHP_SESSION_NONE) {
-    session_start();
-}
+if (session_status() == PHP_SESSION_NONE) { session_start(); }
+if (!isset($_SESSION['id_usuario'])) { header('Location: login.php'); exit(); }
 
-// Control de seguridad
-if (!isset($_SESSION['id_usuario'])) {
-    header('Location: login.php');
-    exit();
-}
+require_once __DIR__ . '/../Capa_Negocio/ProductoNegocio.php';
+require_once __DIR__ . '/../Capa_Negocio/VentaNegocio.php';
 
-// Jalar la capa de negocio para cargar los usuarios reales en la tabla
-require_once __DIR__ . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . 'Capa_Negocio' . DIRECTORY_SEPARATOR . 'UsuarioNegocio.php';
-$usuarioNegocio = new UsuarioNegocio();
-$listaUsuarios = $usuarioNegocio->listarUsuarios();
+$productoNegocio = new ProductoNegocio();
+$ventaNegocio    = new VentaNegocio();
+
+// Datos para reportes
+$bajoStock   = $productoNegocio->obtenerBajoStock(5) ?? [];
+
+// Fechas por defecto: mes actual
+$hoy    = date('Y-m-d');
+$inicio = $_GET['fecha_inicio'] ?? date('Y-m-01');
+$fin    = $_GET['fecha_fin']    ?? $hoy;
+
+$ventasPeriodo  = $ventaNegocio->generarReporteVentasPorFechas($inicio, $fin) ?? [];
+$ingresos       = $ventaNegocio->obtenerIngresosTotales($inicio, $fin) ?? 0;
+$topProductos   = $ventaNegocio->generarReporteProductosMasVendidos(10) ?? [];
+
+$pageTitle  = 'Dashboard';
+$activePage = 'dashboard';
+require_once __DIR__ . '/includes/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - TIENDA PAJARITO</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"> <style>
-        body { min-height: 100vh; overflow-x: hidden; }
-        .sidebar { min-width: 250px; max-width: 250px; min-height: 100vh; background-color: #212529; }
-        .sidebar a { color: #adb5bd; text-decoration: none; display: block; padding: 12px 20px; transition: 0.3s; }
-        .sidebar a:hover, .sidebar a.active { color: #fff; background-color: #343a40; border-left: 4px solid #0d6efd; }
-    </style>
-</head>
-<body class="bg-light d-flex">
+<body>
+<div class="app-shell">
+<?php require_once __DIR__ . '/includes/sidebar.php'; ?>
 
-    <div class="sidebar text-white shadow">
-        <div class="p-4 text-center border-bottom border-secondary">
-            <h4 class="fw-bold text-primary mb-0">TIENDA PAJARITO</h4>
-            <small class="text-muted">Inventario & Ventas</small>
-        </div>
-        <div class="p-3">
-            <p class="text-uppercase text-muted fw-bold small mb-2">Módulos</p>
-            <a href="#" class="active"><i class="fa-solid fa-users me-2"></i> Usuarios</a>
-            <a href="#"><i class="fa-solid fa-boxes-stacked me-2"></i> Inventario</a>
-            <a href="#"><i class="fa-solid fa-cart-shopping me-2"></i> Ventas</a>
-            <a href="#"><i class="fa-solid fa-address-book me-2"></i> Clientes</a>
-            
-            <p class="text-uppercase text-muted fw-bold small mt-4 mb-2">Sistema</p>
-            <a href="login.php" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i> Cerrar Sesión</a>
-        </div>
-    </div>
-
-    <div class="flex-grow-1 p-4">
-        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+<div class="main-content">
+    <header class="topbar">
+        <div class="topbar-left">
+            <button class="hamburger" id="hamburgerBtn"><span></span><span></span><span></span></button>
             <div>
-                <h2 class="fw-bold text-dark mb-0">Gestión de Usuarios</h2>
-                <small class="text-muted">Bienvenido de nuevo, <?php echo $_SESSION['nombre_usuario']; ?></small>
-            </div>
-<button class="btn btn-primary fw-semibold shadow-sm" data-bs-toggle="modal" data-bs-target="#modalUsuario">
-    <i class="fa-solid fa-user-plus me-2"></i> Agregar Usuario
-</button>        </div>
-
-        <div class="card shadow-sm border-0">
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th class="ps-4">ID</th>
-                                <th>Usuario/Cuenta</th>
-                                <th>Nombre Completo</th>
-                                <th>Rol ID</th>
-                                <th>Estado</th>
-                                <th class="text-center pe-4">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <?php if (empty($listaUsuarios)): ?>
-                                <tr>
-                                    <td colspan="6" class="text-center py-4 text-muted">No hay usuarios registrados en el sistema.</td>
-                                </tr>
-                            <?php else: ?>
-                                <?php foreach ($listaUsuarios as $user): ?>
-                                    <tr>
-                                        <td class="ps-4 fw-bold"><?php echo $user->getIdUsuario(); ?></td>
-                                        <td><span class="badge bg-light text-dark border fw-semibold"><?php echo $user->getUsername(); ?></span></td>
-                                        <td><?php echo $user->getNombreComplete(); ?></td>
-                                        <td><span class="badge bg-secondary"><?php echo $user->getIdRol(); ?></span></td>
-                                        <td>
-                                            <?php if ($user->getEstado()): ?>
-                                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3">Activo</span>
-                                            <?php else: ?>
-                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3">Inactivo</span>
-                                            <?php endif; ?>
-                                        </td>
-                                        <td class="text-center pe-4">
-                                            <button class="btn btn-sm btn-outline-warning me-1" title="Editar"><i class="fa-solid fa-pen"></i></button>
-                                            <button class="btn btn-sm btn-outline-danger" title="Cambiar Estado"><i class="fa-solid fa-toggle-on"></i></button>
-                                        </td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            <?php endif; ?>
-                        </tbody>
-                    </table>
-                </div>
+                <div class="topbar-title">Dashboard General</div>
+                <div class="topbar-subtitle">Bienvenido, <?php echo htmlspecialchars($_SESSION['nombre_usuario']); ?> 👋</div>
             </div>
         </div>
-    </div>
+        <div class="topbar-right">
+            <div class="topbar-date"><i class="fa-regular fa-calendar" style="margin-right:6px;color:var(--accent);"></i><?php echo date('d M Y'); ?></div>
+        </div>
+    </header>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <div class="modal fade" id="modalUsuario" tabindex="-1" aria-labelledby="modalUsuarioLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header bg-dark text-white">
-                    <h5 class="modal-title fw-bold" id="modalUsuarioLabel">Registrar Nuevo Usuario</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form action="controladores/UsuarioController.php?accion=guardar" method="POST">
-                    <div class="modal-body">
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Nombre Completo</label>
-                            <input type="text" name="nombre_complete" class="form-control" placeholder="Ej: Juan Pérez" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Usuario / Cuenta de acceso</label>
-                            <input type="text" name="username" class="form-control" placeholder="Ej: jperez" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Contraseña</label>
-                            <input type="password" name="password" class="form-control" placeholder="••••••••" required>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Rol del Usuario</label>
-                            <select name="id_rol" class="form-select" required>
-                                <option value="" disabled selected>Seleccione un rol...</option>
-                                <option value="1">Administrador</option>
-                                <option value="2">Vendedor / Cajero</option>
-                            </select>
-                        </div>
+    <main class="page-content">
 
-                    </div>
-                    <div class="modal-footer bg-light">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-success fw-bold px-4">Guardar Usuario</button>
-                    </div>
-                </form>
+        <!-- ═══ KPI: Resumen Período ═══ -->
+        <div class="kpi-grid mb-24" style="margin-bottom:24px;">
+            <div class="kpi-card info">
+                <div class="kpi-value"><?php echo count($bajoStock); ?></div>
+                <div class="kpi-label">Productos con bajo stock</div>
+            </div>
+            <div class="kpi-card success">
+                <div class="kpi-value">$<?php echo number_format($ingresos, 2); ?></div>
+                <div class="kpi-label">Ingresos en el período</div>
+            </div>
+            <div class="kpi-card accent">
+                <div class="kpi-value"><?php echo count($ventasPeriodo); ?></div>
+                <div class="kpi-label">Ventas en el período</div>
+            </div>
+            <div class="kpi-card warning">
+                <div class="kpi-value"><?php echo count($topProductos); ?></div>
+                <div class="kpi-label">Productos analizados</div>
             </div>
         </div>
-    </div>
+
+        <!-- ═══ Sección 1: Bajo Stock ═══ -->
+        <div class="card mb-24" style="margin-bottom:24px;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    Productos con Bajo Stock (≤ 5 unidades)
+                </h2>
+                <?php if (!empty($bajoStock)): ?>
+                <span class="badge badge-warning"><?php echo count($bajoStock); ?> alerta(s)</span>
+                <?php endif; ?>
+            </div>
+            <div class="table-wrapper">
+                <table class="nx-table">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th style="text-align:center;">Stock Actual</th>
+                            <th>Estado</th>
+                            <th style="text-align:center;">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($bajoStock)): ?>
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-icon">✓</div>
+                                    <p>¡Excelente! Todos los productos tienen stock suficiente.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($bajoStock as $prod): ?>
+                        <tr>
+                            <td><span class="badge badge-neutral"><?php echo htmlspecialchars($prod->getCodigo()); ?></span></td>
+                            <td class="fw"><?php echo htmlspecialchars($prod->getNombre()); ?></td>
+                            <td style="text-align:center;">
+                                <?php $s = $prod->getStock(); ?>
+                                <span class="badge <?php echo $s == 0 ? 'stock-zero' : 'stock-low'; ?>" style="font-size:13px;padding:4px 12px;">
+                                    <?php echo $s; ?> uds
+                                </span>
+                            </td>
+                            <td>
+                                <?php if ($prod->getStock() == 0): ?>
+                                    <span class="badge badge-danger">Sin existencias</span>
+                                <?php else: ?>
+                                    <span class="badge badge-warning">Requiere reabastecimiento</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="text-align:center;">
+                                <a href="/Almacen_In/Capa_Presentacion/productos.php" class="btn btn-primary btn-sm">
+                                    Actualizar
+                                </a>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ Sección 2: Ventas por período ═══ -->
+        <div class="card mb-24" style="margin-bottom:24px;">
+            <div class="card-header">
+                <h2 class="card-title">
+                    Historial de Ventas por Rango de Fechas
+                </h2>
+                <div>
+                    <form method="GET" style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+                        <div>
+                            <label class="form-label" style="margin-bottom:4px;">Desde</label>
+                            <input type="date" name="fecha_inicio" value="<?php echo htmlspecialchars($inicio); ?>" class="form-control" style="width:160px;">
+                        </div>
+                        <div>
+                            <label class="form-label" style="margin-bottom:4px;">Hasta</label>
+                            <input type="date" name="fecha_fin" value="<?php echo htmlspecialchars($fin); ?>" class="form-control" style="width:160px;">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Filtrar</button>
+                    </form>
+                </div>
+            </div>
+            <div class="table-wrapper">
+                <table class="nx-table">
+                    <thead>
+                        <tr>
+                            <th>ID Venta</th>
+                            <th>Fecha</th>
+                            <th style="text-align:right;">Subtotal</th>
+                            <th style="text-align:right;">IVA</th>
+                            <th style="text-align:right;">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($ventasPeriodo)): ?>
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <div class="empty-icon">📊</div>
+                                    <p>No hay ventas en el período seleccionado.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($ventasPeriodo as $v): ?>
+                        <tr>
+                            <td><span class="badge badge-accent">#<?php echo str_pad($v->getIdVenta(), 4, '0', STR_PAD_LEFT); ?></span></td>
+                            <td class="fw"><?php echo date('d/m/Y H:i', strtotime($v->getFechaVenta())); ?></td>
+                            <td style="text-align:right;">$<?php echo number_format($v->getSubtotal(), 2); ?></td>
+                            <td style="text-align:right;color:var(--warning);">$<?php echo number_format($v->getIva(), 2); ?></td>
+                            <td style="text-align:right;font-weight:700;color:var(--success);">$<?php echo number_format($v->getTotal(), 2); ?></td>
+                        </tr>
+                        <?php endforeach; ?>
+                        <tr style="background:var(--bg-surface-2);border-top:2px solid var(--accent);">
+                            <td colspan="4" style="text-align:right;font-weight:700;padding-right:16px;">Total Acumulado del Período:</td>
+                            <td style="text-align:right;font-family:'Outfit',sans-serif;font-size:17px;font-weight:800;color:var(--accent);">$<?php echo number_format($ingresos, 2); ?></td>
+                        </tr>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ═══ Sección 3: Top Productos Más Vendidos ═══ -->
+        <div class="card">
+            <div class="card-header">
+                <h2 class="card-title">
+                    Top Productos Más Vendidos
+                </h2>
+            </div>
+            <div class="table-wrapper">
+                <table class="nx-table">
+                    <thead>
+                        <tr>
+                            <th style="text-align:center;">Ranking</th>
+                            <th>Código</th>
+                            <th>Producto</th>
+                            <th style="text-align:right;">Unidades Vendidas</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    <?php if (empty($topProductos)): ?>
+                        <tr>
+                            <td colspan="4">
+                                <div class="empty-state">
+                                    <div class="empty-icon">🏆</div>
+                                    <p>Sin datos de ventas para generar el ranking.</p>
+                                </div>
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($topProductos as $rank => $prod): ?>
+                        <tr>
+                            <td style="text-align:center;">
+                                <?php if ($rank === 0): ?>
+                                    <span style="font-size:20px;">🥇</span>
+                                <?php elseif ($rank === 1): ?>
+                                    <span style="font-size:20px;">🥈</span>
+                                <?php elseif ($rank === 2): ?>
+                                    <span style="font-size:20px;">🥉</span>
+                                <?php else: ?>
+                                    <span class="badge badge-neutral">#<?php echo $rank + 1; ?></span>
+                                <?php endif; ?>
+                            </td>
+                            <td><span class="badge badge-neutral"><?php echo htmlspecialchars($prod['codigo']); ?></span></td>
+                            <td class="fw"><?php echo htmlspecialchars($prod['nombre']); ?></td>
+                            <td style="text-align:right;">
+                                <span style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:var(--accent);">
+                                    <?php echo $prod['total_unidades_vendidas']; ?>
+                                </span>
+                                <span class="text-muted" style="font-size:12px;"> uds</span>
+                            </td>
+                        </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </main>
+</div>
+</div>
 </body>
 </html>

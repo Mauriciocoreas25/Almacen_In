@@ -67,7 +67,7 @@ class VentaNegocio {
             $this->productoDatos->actualizarStock($item['id_producto'], $cantidadDescontar);
         }
 
-        return true; // Transacción completada con éxito
+        return $idVentaGenerado; // Transacción completada con éxito, retorna el ID de la venta
     }
 
     // Listar historial de transacciones 
