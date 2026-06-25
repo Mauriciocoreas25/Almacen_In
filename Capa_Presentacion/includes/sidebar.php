@@ -28,21 +28,24 @@ try {
     $badgeStock = count($bajos);
 } catch (Exception $e) { $badgeStock = 0; }
 
-// Definir los items de navegación
+// Definir los items de navegación con restricciones de rol
 $navItems = [
     ['label' => 'Dashboard',    'icon' => 'fa-gauge-high',     'href' => '/Almacen_In/Capa_Presentacion/dashboard.php',         'key' => 'dashboard',  'section' => 'Principal'],
-    ['label' => 'Categorías',   'icon' => 'fa-tags',           'href' => '/Almacen_In/Capa_Presentacion/categorias.php',        'key' => 'categorias', 'section' => 'Inventario'],
-    ['label' => 'Productos',    'icon' => 'fa-boxes-stacked',  'href' => '/Almacen_In/Capa_Presentacion/productos.php',         'key' => 'productos',  'section' => 'Inventario', 'badge' => $badgeStock > 0 ? $badgeStock : 0],
+    ['label' => 'Categorías',   'icon' => 'fa-tags',           'href' => '/Almacen_In/Capa_Presentacion/categorias.php',        'key' => 'categorias', 'section' => 'Inventario', 'roles' => [1, 3]],
+    ['label' => 'Productos',    'icon' => 'fa-boxes-stacked',  'href' => '/Almacen_In/Capa_Presentacion/productos.php',         'key' => 'productos',  'section' => 'Inventario', 'badge' => $badgeStock > 0 ? $badgeStock : 0, 'roles' => [1, 3]],
     ['label' => 'Clientes',     'icon' => 'fa-address-book',   'href' => '/Almacen_In/Capa_Presentacion/clientes.php',         'key' => 'clientes',   'section' => 'Ventas'],
     ['label' => 'Nueva Venta',  'icon' => 'fa-cart-plus',      'href' => '/Almacen_In/Capa_Presentacion/ventas.php',           'key' => 'ventas',     'section' => 'Ventas'],
     ['label' => 'Historial',    'icon' => 'fa-receipt',        'href' => '/Almacen_In/Capa_Presentacion/historial_ventas.php', 'key' => 'historial',  'section' => 'Ventas'],
-    ['label' => 'Usuarios',     'icon' => 'fa-users',          'href' => '/Almacen_In/Capa_Presentacion/usuarios.php',         'key' => 'usuarios',   'section' => 'Administración'],
+    ['label' => 'Usuarios',     'icon' => 'fa-users',          'href' => '/Almacen_In/Capa_Presentacion/usuarios.php',         'key' => 'usuarios',   'section' => 'Administración', 'roles' => [1]],
 ];
 
-// Agrupar por sección
-$sections = [];
+// Filtrar los items de navegación según el rol del usuario
+$filteredNavItems = [];
 foreach ($navItems as $item) {
-    $sections[$item['section']][] = $item;
+    if (isset($item['roles']) && !in_array($rolId, $item['roles'])) {
+        continue;
+    }
+    $filteredNavItems[] = $item;
 }
 ?>
 <!-- Overlay mobile -->
@@ -60,7 +63,7 @@ foreach ($navItems as $item) {
     <!-- Navigation -->
     <nav class="sidebar-nav">
         <?php $lastSection = ''; ?>
-        <?php foreach ($navItems as $item): ?>
+        <?php foreach ($filteredNavItems as $item): ?>
             <?php if ($item['section'] !== $lastSection): ?>
                 <div class="nav-section-label"><?php echo $item['section']; ?></div>
                 <?php $lastSection = $item['section']; ?>

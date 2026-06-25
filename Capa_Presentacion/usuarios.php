@@ -3,6 +3,9 @@ if (session_status() == PHP_SESSION_NONE) { session_start(); }
 if (!isset($_SESSION['id_usuario'])) {
     header('Location: login.php'); exit();
 }
+if ($_SESSION['id_rol'] != 1) {
+    header('Location: dashboard.php'); exit();
+}
 
 // Cargar datos para la tabla de usuarios
 require_once __DIR__ . '/../Capa_Negocio/UsuarioNegocio.php';
@@ -17,6 +20,11 @@ $flashErr = $_SESSION['flash_err'] ?? ''; unset($_SESSION['flash_err']);
 require_once __DIR__ . '/../Capa_Negocio/RolNegocio.php';
 $rolNegocio = new RolNegocio();
 $listaRoles = $rolNegocio->listarTodo() ?? [];
+
+$rolNombres = [];
+foreach ($listaRoles as $r) {
+    $rolNombres[$r->getIdRol()] = $r->getNombreRol();
+}
 
 $pageTitle  = 'Usuarios';
 $activePage = 'usuarios';
@@ -106,11 +114,18 @@ require_once __DIR__ . '/includes/header.php';
                             </td>
                             <td class="fw"><?php echo htmlspecialchars($user->getNombreComplete()); ?></td>
                             <td>
-                                <?php if ($user->getIdRol() == 1): ?>
-                                    <span class="badge badge-info">Admin</span>
-                                <?php else: ?>
-                                    <span class="badge badge-neutral">Vendedor</span>
-                                <?php endif; ?>
+                                <?php 
+                                $rolName = $rolNombres[$user->getIdRol()] ?? 'Desconocido';
+                                $badgeClass = 'badge-neutral';
+                                if ($user->getIdRol() == 1) {
+                                    $badgeClass = 'badge-info';
+                                } elseif ($user->getIdRol() == 3) {
+                                    $badgeClass = 'badge-accent';
+                                }
+                                ?>
+                                <span class="badge <?php echo $badgeClass; ?>">
+                                    <?php echo htmlspecialchars($rolName); ?>
+                                </span>
                             </td>
                             <td>
                                 <?php if ($user->getEstado()): ?>
@@ -169,8 +184,9 @@ require_once __DIR__ . '/includes/header.php';
                     <label class="form-label">Rol del Usuario</label>
                     <select name="id_rol" class="form-select" required>
                         <option value="" disabled selected>Seleccione un rol...</option>
-                        <option value="1">Administrador</option>
-                        <option value="2">Vendedor / Cajero</option>
+                        <?php foreach ($listaRoles as $r): ?>
+                            <option value="<?php echo $r->getIdRol(); ?>"><?php echo htmlspecialchars($r->getNombreRol()); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>
@@ -207,8 +223,9 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Rol</label>
                     <select name="id_rol" id="editRol" class="form-select" required>
-                        <option value="1">Administrador</option>
-                        <option value="2">Vendedor / Cajero</option>
+                        <?php foreach ($listaRoles as $r): ?>
+                            <option value="<?php echo $r->getIdRol(); ?>"><?php echo htmlspecialchars($r->getNombreRol()); ?></option>
+                        <?php endforeach; ?>
                     </select>
                 </div>
             </div>

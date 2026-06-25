@@ -10,8 +10,8 @@ $productoNegocio = new ProductoNegocio();
 $listaClientes   = $clienteNegocio->listarClientes()   ?? [];
 $listaProductos  = $productoNegocio->listarProductos() ?? [];
 
-// Solo productos activos con stock
-$productosDisponibles = array_filter($listaProductos, fn($p) => $p->getStock() > 0 && $p->getEstado());
+// Solo productos activos
+$productosDisponibles = array_filter($listaProductos, fn($p) => $p->getEstado());
 
 $flashErr = $_SESSION['flash_err'] ?? ''; unset($_SESSION['flash_err']);
 
@@ -58,6 +58,7 @@ require_once __DIR__ . '/includes/header.php';
                             <option value="<?php echo $cli->getIdCliente(); ?>">
                                 <?php echo htmlspecialchars($cli->getNombreCompleto()); ?>
                                 <?php if ($cli->getDui()): ?> (DUI: <?php echo htmlspecialchars($cli->getDui()); ?>)<?php endif; ?>
+                                <?php if ($cli->getPersonalidadJuridica() && $cli->getNrc()): ?> (NRC: <?php echo htmlspecialchars($cli->getNrc()); ?>)<?php endif; ?>
                                 <?php echo $cli->getPersonalidadJuridica() ? ' [Jurídico]' : ' [Natural]'; ?>
                                 <?php if ($cli->getTelefono()): ?> · Tel: <?php echo htmlspecialchars($cli->getTelefono()); ?><?php endif; ?>
                             </option>
@@ -73,26 +74,20 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
                     <div class="card-body" style="padding:16px 20px;">
                         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;">
-                            <div style="flex:1;min-width:200px;">
-                                <label class="form-label">Buscar Producto</label>
-                                <div class="input-group">
-                                    <i class="fa-solid fa-search input-icon"></i>
-                                    <input type="text" id="prodSearch" class="form-control" placeholder="Código o nombre..." oninput="filterProductSearch(this.value)">
-                                </div>
-                            </div>
-                            <div style="min-width:180px;">
-                                <label class="form-label">Seleccionar</label>
+                            <div style="flex:1;min-width:180px;">
+                                <label class="form-label">Seleccionar Producto</label>
                                 <select id="prodSelect" class="form-select">
                                     <option value="">-- Seleccionar --</option>
-                                    <?php foreach ($productosDisponibles as $prod): ?>
-                                    <option value="<?php echo $prod->getIdProducto(); ?>"
-                                            data-nombre="<?php echo htmlspecialchars($prod->getNombre()); ?>"
-                                            data-precio="<?php echo $prod->getPrecio(); ?>"
-                                            data-stock="<?php echo $prod->getStock(); ?>"
-                                            data-codigo="<?php echo htmlspecialchars($prod->getCodigo()); ?>">
-                                        [<?php echo htmlspecialchars($prod->getCodigo()); ?>] <?php echo htmlspecialchars($prod->getNombre()); ?> — $<?php echo number_format($prod->getPrecio(),2); ?>
-                                    </option>
-                                    <?php endforeach; ?>
+                                     <?php foreach ($productosDisponibles as $prod): ?>
+                                     <option value="<?php echo $prod->getIdProducto(); ?>"
+                                             data-nombre="<?php echo htmlspecialchars($prod->getNombre()); ?>"
+                                             data-precio="<?php echo $prod->getPrecio(); ?>"
+                                             data-stock="<?php echo $prod->getStock(); ?>"
+                                             data-codigo="<?php echo htmlspecialchars($prod->getCodigo()); ?>"
+                                             <?php echo $prod->getStock() <= 0 ? 'disabled style="color: gray;"' : ''; ?>>
+                                         [<?php echo htmlspecialchars($prod->getCodigo()); ?>] <?php echo htmlspecialchars($prod->getNombre()); ?> — $<?php echo number_format($prod->getPrecio(),2); ?><?php echo $prod->getStock() <= 0 ? ' (Sin stock)' : ''; ?>
+                                     </option>
+                                     <?php endforeach; ?>
                                 </select>
                             </div>
                             <div style="min-width:90px;">
@@ -127,14 +122,6 @@ require_once __DIR__ . '/includes/header.php';
                                 </tr>
                             </thead>
                             <tbody id="cartTableBody">
-                                <tr id="cartEmptyRow">
-                                    <td colspan="5">
-                                        <div class="empty-state">
-                                            <div class="empty-icon">🛒</div>
-                                            <p>El carrito está vacío. Agrega productos arriba.</p>
-                                        </div>
-                                    </td>
-                                </tr>
                             </tbody>
                         </table>
                     </div>
@@ -210,15 +197,7 @@ const PRODUCTOS_DATA = <?php
 // ── Carrito State ─────────────────────────────────────
 let carrito = []; // [{id, codigo, nombre, precio, cantidad, stock}]
 
-// ── Filtro de búsqueda de producto ───────────────────
-function filterProductSearch(q) {
-    q = q.toLowerCase();
-    const sel = document.getElementById('prodSelect');
-    Array.from(sel.options).forEach(opt => {
-        if (!opt.value) return;
-        opt.style.display = (opt.text.toLowerCase().includes(q) || !q) ? '' : 'none';
-    });
-}
+
 
 // ── Agregar al carrito ────────────────────────────────
 function agregarAlCarrito() {
@@ -271,22 +250,19 @@ function cambiarCantidad(id, valor) {
 // ── Renderizar tabla del carrito ──────────────────────
 function renderCarrito() {
     const tbody      = document.getElementById('cartTableBody');
-    const emptyRow   = document.getElementById('cartEmptyRow');
     const btnProcesar= document.getElementById('btnProcesar');
     const countEl    = document.getElementById('cartCount');
-
-    // Limpiar filas previas (excepto emptyRow)
+ 
+    // Limpiar filas previas
     Array.from(tbody.querySelectorAll('tr.cart-item')).forEach(r => r.remove());
-
+ 
     if (carrito.length === 0) {
-        if (emptyRow) emptyRow.style.display = '';
         btnProcesar.disabled = true;
         countEl.textContent = '0 ítem(s)';
         updateTotales();
         return;
     }
-
-    if (emptyRow) emptyRow.style.display = 'none';
+ 
     btnProcesar.disabled = false;
     countEl.textContent  = `${carrito.length} ítem(s)`;
 
@@ -320,11 +296,11 @@ function renderCarrito() {
     updateTotales();
 }
 
-// ── Calcular y mostrar totales ────────────────────────
+// ── Calcular y mostrar totales (IVA Incluido) ──────────
 function updateTotales() {
-    const subtotal = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
-    const iva      = subtotal * 0.13;
-    const total    = subtotal + iva;
+    const total    = carrito.reduce((acc, i) => acc + (i.precio * i.cantidad), 0);
+    const subtotal = total / 1.13;
+    const iva      = total - subtotal;
 
     document.getElementById('totalSubtotal').textContent = `$${subtotal.toFixed(2)}`;
     document.getElementById('totalIva').textContent      = `$${iva.toFixed(2)}`;

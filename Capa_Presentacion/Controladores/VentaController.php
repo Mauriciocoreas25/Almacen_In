@@ -50,6 +50,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $accion === 'procesar') {
     }
 }
 
+// ── Anular venta ──────────────────────────────────────────
+if ($accion === 'anular') {
+    $id_venta = (int)($_GET['id'] ?? 0);
+
+    if ($id_venta) {
+        require_once __DIR__ . '/../../Capa_Negocio/VentaNegocio.php';
+        $ventaNegocio = new VentaNegocio();
+        $resultado    = $ventaNegocio->anularVenta($id_venta);
+
+        if ($resultado === true) {
+            $_SESSION['flash_ok'] = "Venta anulada correctamente y el stock ha sido devuelto al inventario.";
+        } else {
+            $_SESSION['flash_err'] = is_string($resultado) ? $resultado : "Error al intentar anular la venta.";
+        }
+    } else {
+        $_SESSION['flash_err'] = "ID de venta inválido.";
+    }
+
+    header('Location: /Almacen_In/Capa_Presentacion/historial_ventas.php');
+    exit();
+}
+
 // Fallback
 header('Location: /Almacen_In/Capa_Presentacion/ventas.php');
 exit();

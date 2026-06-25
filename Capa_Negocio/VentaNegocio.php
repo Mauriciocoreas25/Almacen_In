@@ -37,16 +37,15 @@ class VentaNegocio {
                 return "Stock insuficiente para el producto: " . $producto->getNombre() . ". Disponible: " . $producto->getStock();
             }
         }
-
-        // 2. CÁLCULO AUTOMÁTICO DE MONTOS 
-        $subtotal = 0;
+        // 2. CÁLCULO AUTOMÁTICO DE MONTOS (IVA Incluido)
+        $total = 0;
         foreach ($carritoProductos as $item) {
-            $subtotal += ($item['precio_unitario'] * $item['cantidad']);
+            $total += ($item['precio_unitario'] * $item['cantidad']);
         }
         
-        $tasaIva = 0.13; // IVA estándar del 13% aplicable localmente
-        $iva = $subtotal * $tasaIva;
-        $total = $subtotal + $iva;
+        $tasaIva = 0.13;
+        $subtotal = round($total / (1 + $tasaIva), 2);
+        $iva = round($total - $subtotal, 2);
 
         // 3. REGISTRAR ENCABEZADO DE LA VENTA
         $nuevaVenta = new Venta(null, null, $id_cliente, $id_usuario, $subtotal, $iva, $total);
@@ -113,5 +112,43 @@ class VentaNegocio {
             }
         }
         return $reporteCompleto;
+    }
+
+    // Anular una venta, devolviendo el stock de los productos vendidos
+    public function anularVenta($id_venta) {
+        if (empty($id_venta)) {
+            return "ID de venta inválido.";
+        }
+
+        // 1. Obtener la venta
+        $venta = $this->ventaDatos->buscarPorId($id_venta);
+        if (!$venta) {
+            return "La venta especificada no existe.";
+        }
+
+        // Verificar que no esté ya anulada
+        if ($venta->getEstado() === 'Anulada') {
+            return "Esta venta ya se encuentra anulada.";
+        }
+
+        // 2. Obtener los detalles de la venta
+        $detalles = $this->detalleVentaDatos->listarPorVenta($id_venta);
+        if (empty($detalles)) {
+            return "No se encontraron detalles para esta venta.";
+        }
+
+        // 3. Devolver los productos al inventario
+        foreach ($detalles as $det) {
+            // Actualizar stock sumando la cantidad original de la venta
+            $this->productoDatos->actualizarStock($det->getIdProducto(), $det->getCantidad());
+        }
+
+        // 4. Actualizar el estado de la venta en base de datos
+        $resultado = $this->ventaDatos->anular($id_venta);
+        if ($resultado) {
+            return true;
+        }
+
+        return "Error al intentar anular la venta en la base de datos.";
     }
 }

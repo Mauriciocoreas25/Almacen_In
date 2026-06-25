@@ -46,7 +46,7 @@ require_once __DIR__ . '/includes/header.php';
 
         <!-- ═══ KPI: Resumen Período ═══ -->
         <div class="kpi-grid mb-24" style="margin-bottom:24px;">
-            <div class="kpi-card info">
+            <div class="kpi-card success">
                 <div class="kpi-value"><?php echo count($bajoStock); ?></div>
                 <div class="kpi-label">Productos con bajo stock</div>
             </div>
@@ -54,13 +54,9 @@ require_once __DIR__ . '/includes/header.php';
                 <div class="kpi-value">$<?php echo number_format($ingresos, 2); ?></div>
                 <div class="kpi-label">Ingresos en el período</div>
             </div>
-            <div class="kpi-card accent">
+            <div class="kpi-card success">
                 <div class="kpi-value"><?php echo count($ventasPeriodo); ?></div>
                 <div class="kpi-label">Ventas en el período</div>
-            </div>
-            <div class="kpi-card warning">
-                <div class="kpi-value"><?php echo count($topProductos); ?></div>
-                <div class="kpi-label">Productos analizados</div>
             </div>
         </div>
 
@@ -88,11 +84,8 @@ require_once __DIR__ . '/includes/header.php';
                     <tbody>
                     <?php if (empty($bajoStock)): ?>
                         <tr>
-                            <td colspan="5">
-                                <div class="empty-state">
-                                    <div class="empty-icon">✓</div>
-                                    <p>¡Excelente! Todos los productos tienen stock suficiente.</p>
-                                </div>
+                            <td colspan="5" style="text-align:center;padding:24px;color:var(--text-muted);">
+                                Todos los productos tienen stock suficiente.
                             </td>
                         </tr>
                     <?php else: ?>
@@ -217,16 +210,8 @@ require_once __DIR__ . '/includes/header.php';
                     <?php else: ?>
                         <?php foreach ($topProductos as $rank => $prod): ?>
                         <tr>
-                            <td style="text-align:center;">
-                                <?php if ($rank === 0): ?>
-                                    <span style="font-size:20px;">🥇</span>
-                                <?php elseif ($rank === 1): ?>
-                                    <span style="font-size:20px;">🥈</span>
-                                <?php elseif ($rank === 2): ?>
-                                    <span style="font-size:20px;">🥉</span>
-                                <?php else: ?>
-                                    <span class="badge badge-neutral">#<?php echo $rank + 1; ?></span>
-                                <?php endif; ?>
+                            <td style="text-align:center;" class="fw">
+                                <?php echo $rank + 1; ?>
                             </td>
                             <td><span class="badge badge-neutral"><?php echo htmlspecialchars($prod['codigo']); ?></span></td>
                             <td class="fw"><?php echo htmlspecialchars($prod['nombre']); ?></td>

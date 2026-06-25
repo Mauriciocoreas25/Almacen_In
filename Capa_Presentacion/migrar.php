@@ -34,6 +34,20 @@ try {
         echo "<p style='color:orange;'>ℹ La columna 'personalidad_juridica' ya existe en 'cliente'.</p>";
     }
 
+    if (!in_array('nrc', $columnNames)) {
+        $conexion->execute_query("ALTER TABLE cliente ADD COLUMN nrc VARCHAR(20) DEFAULT NULL;");
+        echo "<p style='color:green;'>✔ Columna 'nrc' agregada a la tabla 'cliente'.</p>";
+    } else {
+        echo "<p style='color:orange;'>ℹ La columna 'nrc' ya existe en 'cliente'.</p>";
+    }
+
+    if (!in_array('giro', $columnNames)) {
+        $conexion->execute_query("ALTER TABLE cliente ADD COLUMN giro VARCHAR(100) DEFAULT NULL;");
+        echo "<p style='color:green;'>✔ Columna 'giro' agregada a la tabla 'cliente'.</p>";
+    } else {
+        echo "<p style='color:orange;'>ℹ La columna 'giro' ya existe en 'cliente'.</p>";
+    }
+
     // 2. Agregar columna 'subtotal' a la tabla 'detalle_venta'
     $columnsDetails = $conexion->get_records("SHOW COLUMNS FROM detalle_venta");
     $detailsColumnNames = array_column($columnsDetails, 'Field');

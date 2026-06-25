@@ -58,10 +58,9 @@ class VentaDatos {
         $ok = $this->conexion->execute_insert($sql, $params);
         return $ok; // retorna el ID insertado, o false si falló
     }
-
     // Listar historial completo
     public function listarTodo() {
-        $sql = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total
+        $sql = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total, estado
                 FROM venta
                 ORDER BY id_venta DESC";
         $filas = $this->conexion->get_records($sql);
@@ -81,7 +80,8 @@ class VentaDatos {
                 $fila['id_usuario'],
                 $subtotal,
                 $iva,
-                $total
+                $total,
+                $fila['estado'] ?? 'Registrada'
             );
         }
         return $lista;
@@ -89,7 +89,7 @@ class VentaDatos {
 
     // Buscar venta por ID
     public function buscarPorId($id_venta) {
-        $sql  = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total
+        $sql  = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total, estado
                  FROM venta WHERE id_venta = ?";
         $fila = $this->conexion->get_record($sql, [$id_venta]);
 
@@ -106,7 +106,8 @@ class VentaDatos {
                 $fila['id_usuario'],
                 $subtotal,
                 $iva,
-                $total
+                $total,
+                $fila['estado'] ?? 'Registrada'
             );
         }
         return null;
@@ -114,7 +115,7 @@ class VentaDatos {
 
     // Reporte: ventas por rango de fechas
     public function listarPorRangoFechas($fechaInicio, $fechaFin) {
-        $sql  = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total
+        $sql  = "SELECT id_venta, fecha_hora, id_cliente, id_usuario, impuesto, total, estado
                  FROM venta
                  WHERE DATE(fecha_hora) BETWEEN ? AND ?
                  ORDER BY fecha_hora ASC";
@@ -134,7 +135,8 @@ class VentaDatos {
                 $fila['id_usuario'],
                 $subtotal,
                 $iva,
-                $total
+                $total,
+                $fila['estado'] ?? 'Registrada'
             );
         }
         return $lista;
@@ -142,8 +144,14 @@ class VentaDatos {
 
     // Reporte: monto total acumulado en un período
     public function obtenerMontoTotalVendido($fechaInicio, $fechaFin) {
-        $sql       = "SELECT SUM(total) as monto_total FROM venta WHERE DATE(fecha_hora) BETWEEN ? AND ?";
+        $sql       = "SELECT SUM(total) as monto_total FROM venta WHERE estado != 'Anulada' AND DATE(fecha_hora) BETWEEN ? AND ?";
         $resultado = $this->conexion->get_record($sql, [$fechaInicio, $fechaFin]);
         return $resultado ? (double)$resultado['monto_total'] : 0.0;
+    }
+
+    // Anular una venta por ID
+    public function anular($id_venta) {
+        $sql = "UPDATE venta SET estado = 'Anulada' WHERE id_venta = ?";
+        return $this->conexion->execute_query($sql, [$id_venta]);
     }
 }

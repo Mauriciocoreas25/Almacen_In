@@ -10,9 +10,11 @@ class Cliente {
     private $dui;
     private $nit;
     private $personalidad_juridica;
+    private $nrc;
+    private $giro;
 
     // Constructor para inicializar la entidad cliente 
-    public function __construct($id_cliente = null, $nombre_completo = "", $telefono = "", $correo = "", $direccion = "", $dui = null, $nit = null, $personalidad_juridica = 0) {
+    public function __construct($id_cliente = null, $nombre_completo = "", $telefono = "", $correo = "", $direccion = "", $dui = null, $nit = null, $personalidad_juridica = 0, $nrc = null, $giro = null) {
         $this->id_cliente = $id_cliente;
         $this->nombre_completo = $nombre_completo;
         $this->telefono = $telefono;
@@ -21,6 +23,8 @@ class Cliente {
         $this->dui = $dui;
         $this->nit = $nit;
         $this->personalidad_juridica = $personalidad_juridica;
+        $this->nrc = $nrc;
+        $this->giro = $giro;
     }
 
     // --- MÉTODOS GETTER Y SETTER  PARA OBTENER LOS VALORES ---
@@ -95,5 +99,23 @@ class Cliente {
 
     public function setPersonalidadJuridica($personalidad_juridica) {
         $this->personalidad_juridica = $personalidad_juridica;
+    }
+
+    // nrc
+    public function getNrc() {
+        return $this->nrc;
+    }
+
+    public function setNrc($nrc) {
+        $this->nrc = $nrc;
+    }
+
+    // giro
+    public function getGiro() {
+        return $this->giro;
+    }
+
+    public function setGiro($giro) {
+        $this->giro = $giro;
     }
 }

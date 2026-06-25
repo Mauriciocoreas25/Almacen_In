@@ -68,7 +68,11 @@ require_once __DIR__ . '/includes/header.php';
                         <span style="color:var(--text-muted);">Total período:</span>
                         <span id="totalPeriodo" style="font-weight:700;color:var(--accent);margin-left:8px;">$<?php
                             $totalGlobal = 0;
-                            foreach ($historial as $v) { $totalGlobal += $v->getTotal(); }
+                            foreach ($historial as $v) { 
+                                if ($v->getEstado() !== 'Anulada') {
+                                    $totalGlobal += $v->getTotal(); 
+                                }
+                            }
                             echo number_format($totalGlobal, 2);
                         ?></span>
                     </div>
@@ -87,7 +91,8 @@ require_once __DIR__ . '/includes/header.php';
                             <th style="text-align:right;">Subtotal</th>
                             <th style="text-align:right;">IVA</th>
                             <th style="text-align:right;">Total</th>
-                            <th style="text-align:center;">Comprobante</th>
+                            <th style="text-align:center;">Estado</th>
+                            <th style="text-align:center;">Acciones</th>
                         </tr>
                     </thead>
                     <tbody id="historialBody">
@@ -101,8 +106,10 @@ require_once __DIR__ . '/includes/header.php';
                             </td>
                         </tr>
                     <?php else: ?>
-                        <?php foreach ($historial as $venta): ?>
-                        <tr class="venta-row" data-fecha="<?php echo $venta->getFechaVenta(); ?>">
+                        <?php foreach ($historial as $venta):
+                            $esAnulada = ($venta->getEstado() === 'Anulada');
+                        ?>
+                        <tr class="venta-row" data-fecha="<?php echo $venta->getFechaVenta(); ?>" data-estado="<?php echo htmlspecialchars($venta->getEstado()); ?>" <?php echo $esAnulada ? 'style="opacity: 0.65; background-color: var(--bg-surface-2);"' : ''; ?>>
                             <td><span class="badge badge-accent">#<?php echo str_pad($venta->getIdVenta(), 4, '0', STR_PAD_LEFT); ?></span></td>
                             <td class="fw"><?php echo date('d/m/Y H:i', strtotime($venta->getFechaVenta())); ?></td>
                             <td>
@@ -116,10 +123,30 @@ require_once __DIR__ . '/includes/header.php';
                             <td style="text-align:right;color:var(--warning);">$<?php echo number_format($venta->getIva(), 2); ?></td>
                             <td style="text-align:right;font-weight:700;color:var(--success);">$<?php echo number_format($venta->getTotal(), 2); ?></td>
                             <td style="text-align:center;">
-                                <a href="/Almacen_In/Capa_Presentacion/comprobante.php?id=<?php echo $venta->getIdVenta(); ?>"
-                                   class="btn btn-primary btn-sm" target="_blank">
-                                    <i class="fa-solid fa-file-invoice"></i> Ver
-                                </a>
+                                <?php if ($esAnulada): ?>
+                                    <span class="badge badge-danger"><i class="fa-solid fa-ban" style="font-size:9px;margin-right:4px;"></i>Anulada</span>
+                                <?php else: ?>
+                                    <span class="badge badge-success"><i class="fa-solid fa-circle-check" style="font-size:9px;margin-right:4px;"></i>Registrada</span>
+                                <?php endif; ?>
+                            </td>
+                            <td style="text-align:center;">
+                                <div style="display:flex;gap:6px;justify-content:center;">
+                                    <a href="/Almacen_In/Capa_Presentacion/comprobante.php?id=<?php echo $venta->getIdVenta(); ?>"
+                                       class="btn btn-primary btn-sm" target="_blank" title="Ver Comprobante">
+                                        <i class="fa-solid fa-file-invoice"></i> Ver
+                                    </a>
+                                    <?php if (!$esAnulada): ?>
+                                        <a href="/Almacen_In/Capa_Presentacion/Controladores/VentaController.php?accion=anular&id=<?php echo $venta->getIdVenta(); ?>"
+                                           class="btn btn-danger btn-sm" title="Anular Venta"
+                                           onclick="return confirm('¿Está seguro de anular esta venta? El stock de los productos será devuelto al inventario.')">
+                                            <i class="fa-solid fa-trash"></i> Anular
+                                        </a>
+                                    <?php else: ?>
+                                        <button class="btn btn-neutral btn-sm" disabled style="opacity:0.5;cursor:not-allowed;" title="Venta Anulada">
+                                            <i class="fa-solid fa-ban"></i> Anulada
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
@@ -145,9 +172,11 @@ function filtrarPorFecha() {
         const show  = (!inicio || fecha >= inicio) && (!fin || fecha <= fin);
         row.style.display = show ? '' : 'none';
         if (show) {
-            // Sumar el total de las filas visibles
-            const celdaTotal = row.cells[5].textContent.replace('$','').replace(',','');
-            total += parseFloat(celdaTotal) || 0;
+            // Sumar el total de las filas visibles, ignorando anuladas
+            if (row.dataset.estado !== 'Anulada') {
+                const celdaTotal = row.cells[5].textContent.replace('$','').replace(',','');
+                total += parseFloat(celdaTotal) || 0;
+            }
         }
     });
     document.getElementById('totalPeriodo').textContent = '$' + total.toFixed(2);
@@ -156,7 +185,16 @@ function filtrarPorFecha() {
 function limpiarFiltro() {
     document.getElementById('fechaInicio').value = '';
     document.getElementById('fechaFin').value    = '';
-    document.querySelectorAll('.venta-row').forEach(r => r.style.display = '');
+    const rows = document.querySelectorAll('.venta-row');
+    let total = 0;
+    rows.forEach(r => {
+        r.style.display = '';
+        if (r.dataset.estado !== 'Anulada') {
+            const celdaTotal = r.cells[5].textContent.replace('$','').replace(',','');
+            total += parseFloat(celdaTotal) || 0;
+        }
+    });
+    document.getElementById('totalPeriodo').textContent = '$' + total.toFixed(2);
 }
 
 document.querySelectorAll('.alert').forEach(el => {

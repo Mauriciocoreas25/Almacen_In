@@ -9,9 +9,10 @@ class Venta {
     private $subtotal;
     private $iva;
     private $total;
+    private $estado;
 
     // Constructor para inicializar la entidad
-    public function __construct($id_venta = null, $fecha_venta = null, $id_cliente = null, $id_usuario = null, $subtotal = 0.0, $iva = 0.0, $total = 0.0) {
+    public function __construct($id_venta = null, $fecha_venta = null, $id_cliente = null, $id_usuario = null, $subtotal = 0.0, $iva = 0.0, $total = 0.0, $estado = 'Registrada') {
         $this->id_venta = $id_venta;
         $this->fecha_venta = $fecha_venta;
         $this->id_cliente = $id_cliente;
@@ -19,6 +20,7 @@ class Venta {
         $this->subtotal = (double)$subtotal;
         $this->iva = (double)$iva;
         $this->total = (double)$total;
+        $this->estado = $estado;
     }
 
     // --- MÉTODOS GETTER Y SETTER ---
@@ -84,5 +86,14 @@ class Venta {
 
     public function setTotal($total) {
         $this->total = (double)$total;
+    }
+
+    // estado
+    public function getEstado() {
+        return $this->estado;
+    }
+
+    public function setEstado($estado) {
+        $this->estado = $estado;
     }
 }

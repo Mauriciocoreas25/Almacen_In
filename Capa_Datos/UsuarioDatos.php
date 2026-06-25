@@ -25,7 +25,7 @@ class UsuarioDatos {
             $usuario->getNombreComplete(), 
             '', // Apellidos  lo podemos dejar vacio ya que no lo  pedimos en el formulario.
             'DUI',
-            '00000000-0', // Valor temporal por los campos UNIQUE si no los pides en el formulario
+            'DUI-' . time(), // Valor temporal único por los campos UNIQUE si no los pides en el formulario
             '',
             '',
             $usuario->getUsername() . '@correo.com', // Correo dinámico temporal para evitar el UNIQUE de la BD

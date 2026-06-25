@@ -85,8 +85,10 @@ require_once __DIR__ . '/includes/header.php';
                                     <strong><?php echo htmlspecialchars($cliente->getNombreCompleto()); ?></strong><br>
                                     <span style="font-size:12px;color:var(--text-muted);">
                                         Persona: <?php echo $cliente->getPersonalidadJuridica() ? 'Jurídica' : 'Natural'; ?><br>
-                                        <?php if ($cliente->getDui()): ?>DUI: <?php echo htmlspecialchars($cliente->getDui()); ?><br><?php endif; ?>
+                                        <?php if (!$cliente->getPersonalidadJuridica() && $cliente->getDui()): ?>DUI: <?php echo htmlspecialchars($cliente->getDui()); ?><br><?php endif; ?>
                                         <?php if ($cliente->getNit()): ?>NIT: <?php echo htmlspecialchars($cliente->getNit()); ?><br><?php endif; ?>
+                                        <?php if ($cliente->getPersonalidadJuridica() && $cliente->getNrc()): ?>NRC: <?php echo htmlspecialchars($cliente->getNrc()); ?><br><?php endif; ?>
+                                        <?php if ($cliente->getPersonalidadJuridica() && $cliente->getGiro()): ?>Giro: <?php echo htmlspecialchars($cliente->getGiro()); ?><br><?php endif; ?>
                                         Tel: <?php echo htmlspecialchars($cliente->getTelefono()); ?>
                                     </span>
                                 <?php else: ?>

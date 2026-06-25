@@ -27,7 +27,7 @@ class ClienteDatos {
     // Insertar nuevo cliente
     public function insertar(Cliente $cliente) {
         $tipoPersona = $cliente->getPersonalidadJuridica() ? 'Jurídica' : 'Natural';
-        $sql    = "INSERT INTO cliente (tipo_persona, nombre, direccion, telefono, email, dui, nit, personalidad_juridica) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql    = "INSERT INTO cliente (tipo_persona, nombre, direccion, telefono, email, dui, nit, personalidad_juridica, nrc, giro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $params = [
             $tipoPersona,
             $cliente->getNombreCompleto(),
@@ -36,7 +36,9 @@ class ClienteDatos {
             $cliente->getCorreo() ?: '',
             $cliente->getDui(),
             $cliente->getNit(),
-            (int)$cliente->getPersonalidadJuridica()
+            (int)$cliente->getPersonalidadJuridica(),
+            $cliente->getNrc(),
+            $cliente->getGiro()
         ];
         return $this->conexion->execute_query($sql, $params);
     }
@@ -44,7 +46,7 @@ class ClienteDatos {
     // Modificar cliente existente
     public function modificar(Cliente $cliente) {
         $tipoPersona = $cliente->getPersonalidadJuridica() ? 'Jurídica' : 'Natural';
-        $sql    = "UPDATE cliente SET tipo_persona = ?, nombre = ?, telefono = ?, email = ?, direccion = ?, dui = ?, nit = ?, personalidad_juridica = ? WHERE id_cliente = ?";
+        $sql    = "UPDATE cliente SET tipo_persona = ?, nombre = ?, telefono = ?, email = ?, direccion = ?, dui = ?, nit = ?, personalidad_juridica = ?, nrc = ?, giro = ? WHERE id_cliente = ?";
         $params = [
             $tipoPersona,
             $cliente->getNombreCompleto(),
@@ -54,6 +56,8 @@ class ClienteDatos {
             $cliente->getDui(),
             $cliente->getNit(),
             (int)$cliente->getPersonalidadJuridica(),
+            $cliente->getNrc(),
+            $cliente->getGiro(),
             $cliente->getIdCliente()
         ];
         return $this->conexion->execute_query($sql, $params);
@@ -75,7 +79,7 @@ class ClienteDatos {
 
     // Listar todos los clientes
     public function listarTodo() {
-        $sql  = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica FROM cliente ORDER BY id_cliente DESC";
+        $sql  = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica, nrc, giro FROM cliente ORDER BY id_cliente DESC";
         $filas = $this->conexion->get_records($sql);
 
         $lista = [];
@@ -88,7 +92,9 @@ class ClienteDatos {
                 $fila['direccion']?? '',
                 $fila['dui']      ?? null,
                 $fila['nit']      ?? null,
-                (int)($fila['personalidad_juridica'] ?? 0)
+                (int)($fila['personalidad_juridica'] ?? 0),
+                $fila['nrc']      ?? null,
+                $fila['giro']     ?? null
             );
         }
         return $lista;
@@ -96,7 +102,7 @@ class ClienteDatos {
 
     // Buscar cliente por ID
     public function buscarPorId($id_cliente) {
-        $sql  = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica FROM cliente WHERE id_cliente = ?";
+        $sql  = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica, nrc, giro FROM cliente WHERE id_cliente = ?";
         $fila = $this->conexion->get_record($sql, [$id_cliente]);
 
         if ($fila) {
@@ -108,7 +114,9 @@ class ClienteDatos {
                 $fila['direccion']?? '',
                 $fila['dui']      ?? null,
                 $fila['nit']      ?? null,
-                (int)($fila['personalidad_juridica'] ?? 0)
+                (int)($fila['personalidad_juridica'] ?? 0),
+                $fila['nrc']      ?? null,
+                $fila['giro']     ?? null
             );
         }
         return null;
@@ -116,7 +124,7 @@ class ClienteDatos {
 
     // Buscar clientes por nombre
     public function buscarPorNombre($busqueda) {
-        $sql    = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica FROM cliente WHERE nombre LIKE ?";
+        $sql    = "SELECT id_cliente, nombre, telefono, email, direccion, dui, nit, personalidad_juridica, nrc, giro FROM cliente WHERE nombre LIKE ?";
         $params = ["%" . $busqueda . "%"];
         $filas  = $this->conexion->get_records($sql, $params);
 
@@ -130,7 +138,9 @@ class ClienteDatos {
                 $fila['direccion']?? '',
                 $fila['dui']      ?? null,
                 $fila['nit']      ?? null,
-                (int)($fila['personalidad_juridica'] ?? 0)
+                (int)($fila['personalidad_juridica'] ?? 0),
+                $fila['nrc']      ?? null,
+                $fila['giro']     ?? null
             );
         }
         return $lista;

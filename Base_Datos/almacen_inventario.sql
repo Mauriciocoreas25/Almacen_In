@@ -43,6 +43,8 @@ CREATE TABLE IF NOT EXISTS `cliente` (
   `dui` varchar(20) DEFAULT NULL,
   `nit` varchar(20) DEFAULT NULL,
   `personalidad_juridica` tinyint(1) NOT NULL DEFAULT '0',
+  `nrc` varchar(20) DEFAULT NULL,
+  `giro` varchar(100) DEFAULT NULL,
   PRIMARY KEY (`id_cliente`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -93,10 +95,12 @@ CREATE TABLE IF NOT EXISTS `rol` (
   PRIMARY KEY (`id_rol`)
 ) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
--- Volcando datos para la tabla almacen_inventario.rol: ~2 rows (aproximadamente)
+-- Volcando datos para la tabla almacen_inventario.rol: ~3 rows (aproximadamente)
 INSERT INTO `rol` (`id_rol`, `nombre`, `descripcion`, `estado`) VALUES
 	(1, 'Administrador', NULL, 1),
-	(2, 'Vendedor / Cajero', 'Vendedor o Cajero del almacén', 1);
+	(2, 'Vendedor / Cajero', 'Vendedor o Cajero del almacén', 1),
+	(3, 'Supervisor', 'Supervisor de almacén y inventarios', 1);
+
 
 -- Volcando estructura para tabla almacen_inventario.usuario
 CREATE TABLE IF NOT EXISTS `usuario` (

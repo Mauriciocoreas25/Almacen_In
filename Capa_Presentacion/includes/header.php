@@ -14,11 +14,11 @@ $pageTitle = $pageTitle ?? 'Sistema de Control de Inventario & Ventas';
     <meta name="description" content="Sistema de Control de Inventario &amp; Ventas">
     <title><?php echo htmlspecialchars($pageTitle); ?></title>
 
-    <!-- Estilos de la Pantalla -->
-    <?php
-    $currentPage = basename($_SERVER['PHP_SELF'], '.php');
-    echo '<link rel="stylesheet" href="/Almacen_In/Capa_Presentacion/assets/css/' . $currentPage . '.css">' . "\n";
-    ?>
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet" href="/Almacen_In/Capa_Presentacion/assets/bootstrap-5.3.8-dist/css/bootstrap.min.css">
+
+    <!-- Generic Bootstrap Layout Helper -->
+    <link rel="stylesheet" href="/Almacen_In/Capa_Presentacion/assets/bootstrap-5.3.8-dist/css/bootstrap-layout.css">
 
     <!-- Font Awesome 6 -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">

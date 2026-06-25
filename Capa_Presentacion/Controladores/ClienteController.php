@@ -18,9 +18,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $accion === 'guardar') {
     $dui                  = trim($_POST['dui']                  ?? '');
     $nit                  = trim($_POST['nit']                  ?? '');
     $personalidad_juridica = (int)($_POST['personalidad_juridica'] ?? 0);
+    $nrc                  = trim($_POST['nrc']                  ?? '');
+    $giro                 = trim($_POST['giro']                 ?? '');
 
     if (!empty($nombre_completo) && !empty($telefono)) {
-        $cliente   = new Cliente(null, $nombre_completo, $telefono, $correo, $direccion, $dui ?: null, $nit ?: null, $personalidad_juridica);
+        $cliente   = new Cliente(null, $nombre_completo, $telefono, $correo, $direccion, $dui ?: null, $nit ?: null, $personalidad_juridica, $nrc ?: null, $giro ?: null);
         $resultado = $clienteNegocio->registrarCliente($cliente);
 
         if ($resultado === true) {
@@ -47,9 +49,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $accion === 'editar') {
     $dui                  = trim($_POST['dui']                  ?? '');
     $nit                  = trim($_POST['nit']                  ?? '');
     $personalidad_juridica = (int)($_POST['personalidad_juridica'] ?? 0);
+    $nrc                  = trim($_POST['nrc']                  ?? '');
+    $giro                 = trim($_POST['giro']                 ?? '');
 
     if ($id_cliente && !empty($nombre_completo) && !empty($telefono)) {
-        $cliente   = new Cliente($id_cliente, $nombre_completo, $telefono, $correo, $direccion, $dui ?: null, $nit ?: null, $personalidad_juridica);
+        $cliente   = new Cliente($id_cliente, $nombre_completo, $telefono, $correo, $direccion, $dui ?: null, $nit ?: null, $personalidad_juridica, $nrc ?: null, $giro ?: null);
         $resultado = $clienteNegocio->modificarCliente($cliente);
 
         if ($resultado === true) {

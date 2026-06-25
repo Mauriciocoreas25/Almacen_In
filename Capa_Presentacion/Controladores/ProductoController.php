@@ -1,6 +1,7 @@
 <?php
 if (session_status() == PHP_SESSION_NONE) { session_start(); }
 if (!isset($_SESSION['id_usuario'])) { header('Location: ../login.php'); exit(); }
+if (!in_array($_SESSION['id_rol'], [1, 3])) { header('Location: ../dashboard.php'); exit(); }
 
 require_once __DIR__ . '/../../Capa_Negocio/ProductoNegocio.php';
 require_once __DIR__ . '/../../Capa_Entidades/Producto.php';
